@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 contract Bank {
     address public immutable admin; // 合约部署时只初始化一次
     mapping(address => uint) public balances;
-    address[] private depositors;
+    address[] public depositors;
 
     constructor() {
         //构造函数执行的时候指定部署合约的人就是管理员
@@ -47,7 +47,8 @@ contract Bank {
         }
 
         // 获取前top3
-        for (uint i  = 0; i < 3; i++) {
+        uint topCount = len < 3 ? len : 3;
+        for (uint i = 0; i < topCount; i++) {
             topAddrs[i] = addrs[i];
             topBalances[i] = bals[i];
         }
