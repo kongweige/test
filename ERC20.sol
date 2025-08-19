@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-// 设置 Token 名称（name）："BaseERC20"
-// 设置 Token 符号（symbol）："BERC20"
-// 设置 Token 小数位decimals：18
-// 设置 Token 总量（totalSupply）:100,000,000
-// 允许任何人查看任何地址的 Token 余额（balanceOf）
 
-// 允许 Token 的所有者将他们的 Token 发送给任何人（transfer）；转帐超出余额时抛出异常(require),并显示错误消息 “ERC20: transfer amount exceeds balance”。
-// 允许 Token 的所有者批准某个地址消费他们的一部分Token（approve）
-// 允许任何人查看一个地址可以从其它账户中转账的代币数量（allowance）
-// 允许被授权的地址消费他们被授权的 Token 数量（transferFrom）；
-
-// 本质是BaseERC20是一个公共账本，本质上所有token的流转都是还是在合约内，是不过是从一个地址转移到另一个地址
+// BaseERC20本质是一个公共账本，本质上所有token的流转都是还是在合约内，是不过是从一个地址转移到另一个地址
 contract BaseERC20 {
     string public name; 
     string public symbol; 
@@ -27,8 +17,10 @@ contract BaseERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     constructor() {
-        // write your code here
-        // set name,symbol,decimals,totalSupply
+        name = "BaseERC20";
+        symbol = "BERC20";
+        decimals = 18;
+        totalSupply = 100000000 * 10**uint256(decimals); // 100,000,000 tokens
 
         balances[msg.sender] = totalSupply;  
     }
@@ -40,7 +32,8 @@ contract BaseERC20 {
     // 自己普通转账
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(balances[msg.sender] >= _value, "ERC20: transfer amount exceeds balance");
-        
+        require(_to != address(0), "ERC20: transfer to the zero address");
+
         balances[msg.sender] -= _value;
         balances[_to] += _value;
 
@@ -49,23 +42,30 @@ contract BaseERC20 {
     }
 
     // 类似授权商家扣款
+    // from 实际代币拥有者，to 收款方，msg.sender转账人（授权地址）
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-      
+        require(allowances[_from][msg.sender] >= _value, "ERC20: allowance exceeded");
+        require(balances[_from] >= _value, "ERC20: balance too low");
+        require(_to != address(0), "ERC20: transfer to the zero address");
+
+        balances[_from] -= _value;
+        balances[_to]   += _value;
+
+        allowances[_from][msg.sender] -= _value;
         
         emit Transfer(_from, _to, _value); 
         return true; 
     }
 
     function approve(address _spender, uint256 _value) public returns (bool success) {
-        // write your code here
-
-
+        require(_spender != address(0), "ERC20: approve to the zero address");
+        allowances[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value); 
         return true; 
     }
 
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {   
-        // write your code here     
 
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {   
+        return allowances[_owner][_spender];
     }
 }
